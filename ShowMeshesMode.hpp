@@ -15,7 +15,7 @@ struct ShowMeshesMode : Mode {
 	ShowMeshesMode(MeshBuffer const &buffer);
 	virtual ~ShowMeshesMode();
 
-	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
+	virtual bool handle_event(SDL_Event const &, SDL_Window *window, glm::uvec2 const &window_size) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//z-up trackball-style camera controls:
@@ -36,7 +36,7 @@ struct ShowMeshesMode : Mode {
 	glm::vec3 current_mesh_max = glm::vec3(0.0f);
 	void select_prev_mesh();
 	void select_next_mesh();
-	
+
 	//Vertex array object used to bind mesh buffer for drawing:
 	GLuint vao = 0;
 

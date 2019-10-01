@@ -25,13 +25,14 @@ Load< MeshBuffer > roll_meshes(LoadTagDefault, []() -> MeshBuffer * {
 	//key objects:
 	mesh_Goal = &ret->lookup("Goal");
 	mesh_Sphere = &ret->lookup("Sphere");
-	
+
 	//these meshes collide as (simpler) boxes:
 	mesh_to_collider.insert(std::make_pair(&ret->lookup("Block.Dark"), &ret->lookup("Block.Simple")));
 	mesh_to_collider.insert(std::make_pair(&ret->lookup("Block.Light"), &ret->lookup("Block.Simple")));
 
 	//these meshes collide as themselves:
 	mesh_to_collider.insert(std::make_pair(&ret->lookup("Round.Quarter"), &ret->lookup("Round.Quarter")));
+	mesh_to_collider.insert(std::make_pair(&ret->lookup("Round.Quarter.Detail.001"), &ret->lookup("Round.Quarter.Detail.001")));
 	mesh_to_collider.insert(std::make_pair(&ret->lookup("Round.Corner"), &ret->lookup("Round.Corner")));
 	mesh_to_collider.insert(std::make_pair(&ret->lookup("Round.Corner.Outer"), &ret->lookup("Round.Corner.Outer")));
 
@@ -41,9 +42,13 @@ Load< MeshBuffer > roll_meshes(LoadTagDefault, []() -> MeshBuffer * {
 //Load sphere roll levels:
 Load< std::list< RollLevel > > roll_levels(LoadTagLate, []() -> std::list< RollLevel > * {
 	std::list< RollLevel > *ret = new std::list< RollLevel >();
-	ret->emplace_back(data_path("roll-level-1.scene"));
-	ret->emplace_back(data_path("roll-level-2.scene"));
-	ret->emplace_back(data_path("roll-level-3.scene"));
+	// ret->emplace_back(data_path("roll-level-1.scene"));
+	// ret->emplace_back(data_path("roll-level-2.scene"));
+	// ret->emplace_back(data_path("roll-level-3.scene"));
+	// ret->emplace_back(data_path("roll-level-4.scene"));
+	// ret->emplace_back(data_path("roll-level-5.scene"));
+	ret->emplace_back(data_path("roll-level-6.scene"));
+	ret->emplace_back(data_path("roll-level-7.scene"));
 	return ret;
 });
 
@@ -55,11 +60,11 @@ RollLevel::RollLevel(std::string const &scene_file) {
 
 	//Load scene (using Scene::load function), building proper associations as needed:
 	load(scene_file, [this,&scene_file,&decorations](Scene &, Transform *transform, std::string const &mesh_name){
-		Mesh const *mesh = &roll_meshes->lookup(mesh_name);
-	
+    Mesh const *mesh = &roll_meshes->lookup(mesh_name);
+
 		drawables.emplace_back(transform);
 		Drawable::Pipeline &pipeline = drawables.back().pipeline;
-		
+
 		//set up drawable to draw mesh from buffer:
 		pipeline = lit_color_texture_program_pipeline;
 		pipeline.vao = roll_meshes_for_lit_color_texture_program;
@@ -96,7 +101,7 @@ RollLevel::RollLevel(std::string const &scene_file) {
 		<< goals.size() << " goals "
 		<< "and " << decorations << " decorations."
 		<< std::endl;
-	
+
 	//Create player camera:
 	transforms.emplace_back();
 	cameras.emplace_back(&transforms.back());
@@ -171,4 +176,3 @@ RollLevel &RollLevel::operator=(RollLevel const &other) {
 
 	return *this;
 }
-

@@ -53,7 +53,7 @@ MenuMode::MenuMode(std::vector< Item > const &items_) : items(items_) {
 MenuMode::~MenuMode() {
 }
 
-bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
+bool MenuMode::handle_event(SDL_Event const &evt, SDL_Window *window, glm::uvec2 const &window_size) {
 	if (evt.type == SDL_KEYDOWN) {
 		if (evt.key.keysym.sym == SDLK_UP) {
 			//skip non-selectable items:
@@ -84,7 +84,7 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		}
 	}
 	if (background) {
-		return background->handle_event(evt, window_size);
+		return background->handle_event(evt, nullptr, window_size);
 	} else {
 		return false;
 	}
@@ -151,7 +151,7 @@ void MenuMode::draw(glm::uvec2 const &drawable_size) {
 					draw_sprites.draw(*right_select, glm::vec2(right + bounce, item.at.y), item.scale, right_select_tint);
 				}
 			}
-			
+
 		}
 	} //<-- gets drawn here!
 

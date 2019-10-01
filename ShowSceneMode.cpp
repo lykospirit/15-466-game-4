@@ -19,7 +19,7 @@ ShowSceneMode::ShowSceneMode(Scene const &scene_) : scene(scene_) {
 ShowSceneMode::~ShowSceneMode() {
 }
 
-bool ShowSceneMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
+bool ShowSceneMode::handle_event(SDL_Event const &evt, SDL_Window *window, glm::uvec2 const &window_size) {
 	//----- trackball-style camera controls -----
 	if (evt.type == SDL_MOUSEBUTTONDOWN) {
 		if (evt.button.button == SDL_BUTTON_LEFT) {
@@ -68,7 +68,7 @@ bool ShowSceneMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_
 		if (camera.radius > 1e6f) camera.radius = 1e6f;
 		return true;
 	}
-	
+
 	return false;
 }
 

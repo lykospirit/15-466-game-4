@@ -27,7 +27,7 @@ struct RollLevel : Scene {
 	// copy constructor actually just uses this = operator:
 	RollLevel &operator=(RollLevel const &);
 
-	
+
 	//Solid parts of level are tracked as MeshColliders:
 	struct MeshCollider {
 		MeshCollider(Scene::Transform *transform_, Mesh const &mesh_, MeshBuffer const &buffer_) : transform(transform_), mesh(&mesh_), buffer(&buffer_) { }
@@ -48,7 +48,9 @@ struct RollLevel : Scene {
 		Scene::Transform *transform = nullptr;
 		glm::vec3 rotational_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::vec3 velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 gravity = glm::vec3(0.0f, 0.0f, -1.0f);
 
+    bool in_air = false;
 		float view_azimuth = 0.0f;
 		float view_elevation = 45.0f / 180.0f * 3.1415926f;
 	};
@@ -60,4 +62,3 @@ struct RollLevel : Scene {
 
 	Scene::Camera *camera = nullptr;
 };
-

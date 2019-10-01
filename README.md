@@ -1,8 +1,8 @@
-# (TODO: your game's title)
+# Hyperloop
 
-Author: (TODO: your name)
+Author: Colin Gay
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: Run and jump your way through a tunnel that defies gravity.
 
 Screen Shot:
 
@@ -10,10 +10,10 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+WASD to move, Space to jump, Shift to sprint. Your goal is to reach the yellow objective at the end of the tunnel.
 
 Sources:
 
-(TODO: fill in information about the sources of any **artwork** or **sounds** you used in the game that you did not create yourself. Feel free to also credit yourself for things you did make.)
+All assets used are rendered using Blender v2.8. Credit to Jim McCann for base 3D assets and Blender pipeline. Level design by Colin Gay.
 
 This game was built with [NEST](NEST.md).

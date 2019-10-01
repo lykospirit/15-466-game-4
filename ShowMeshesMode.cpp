@@ -37,7 +37,7 @@ ShowMeshesMode::ShowMeshesMode(MeshBuffer const &buffer_) : buffer(buffer_) {
 ShowMeshesMode::~ShowMeshesMode() {
 }
 
-bool ShowMeshesMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
+bool ShowMeshesMode::handle_event(SDL_Event const &evt, SDL_Window *window, glm::uvec2 const &window_size) {
 	if (evt.type == SDL_KEYDOWN) {
 		if (evt.key.keysym.sym == SDLK_RIGHT) {
 			select_next_mesh();
@@ -97,7 +97,7 @@ bool ShowMeshesMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window
 		if (camera.radius > 1e6f) camera.radius = 1e6f;
 		return true;
 	}
-	
+
 	return false;
 }
 

@@ -93,12 +93,13 @@ int main(int argc, char **argv) {
 	Sound::init();
 
 	//Hide mouse cursor (note: showing can be useful for debugging):
-	//SDL_ShowCursor(SDL_DISABLE);
+	// SDL_ShowCursor(SDL_DISABLE);
+  SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	//------------ load resources --------------
+	//------------ load resources ------------
 	call_load_functions();
 
-	//------------ create game mode + make current --------------
+	//------------ create game mode + make current ------------
 	if (argc > 1) {
 		int32_t level = -1;
 		if (argc >= 2) level = std::stoi(argv[1]);
@@ -144,7 +145,7 @@ int main(int argc, char **argv) {
 					on_resize();
 				}
 				//handle input:
-				if (Mode::current && Mode::current->handle_event(evt, window_size)) {
+				if (Mode::current && Mode::current->handle_event(evt, window, window_size)) {
 					// mode handled it; great
 				} else if (evt.type == SDL_QUIT) {
 					Mode::set_current(nullptr);
@@ -183,7 +184,7 @@ int main(int argc, char **argv) {
 		}
 
 		{ //(3) call the current mode's "draw" function to produce output:
-		
+
 			Mode::current->draw(drawable_size);
 		}
 

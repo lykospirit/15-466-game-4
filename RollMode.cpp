@@ -26,8 +26,8 @@ RollMode::RollMode(RollLevel const &level_) : start(level_), level(level_) {
 RollMode::~RollMode() {
 }
 
-bool RollMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
-	if (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_SPACE) {
+bool RollMode::handle_event(SDL_Event const &evt, SDL_Window *window, glm::uvec2 const &window_size) {
+	if (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_0) {
 		DEBUG_fly = !DEBUG_fly;
 		return true;
 	}
@@ -43,15 +43,19 @@ bool RollMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				++current;
 			}
 			assert(current != roll_levels->end());
-	
+
 			++current;
 			if (current == roll_levels->end()) current = roll_levels->begin();
-	
+
 			//launch a new RollMode with the next level:
 			Mode::set_current(std::make_shared< RollMode >(*current));
 		}
 		return true;
 	}
+  if (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_ESCAPE) {
+    Mode::set_current(nullptr);
+    return true;
+  }
 
 	if (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_1) {
 		DEBUG_show_geometry = !DEBUG_show_geometry;
@@ -76,11 +80,17 @@ bool RollMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_S) {
 			controls.backward = (evt.type == SDL_KEYDOWN);
 			return true;
-		}
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+      controls.jump = (evt.type == SDL_KEYDOWN);
+      return true;
+    } else if (evt.key.keysym.sym == SDLK_LSHIFT) {
+      controls.sprint = (evt.type == SDL_KEYDOWN);
+      return true;
+    }
 	}
 
 	if (evt.type == SDL_MOUSEMOTION) {
-		if (evt.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+		// if (evt.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
 			//based on trackball camera control from ShowMeshesMode:
 			//figure out the motion (as a fraction of a normalized [-a,a]x[-1,1] window):
 			glm::vec2 delta;
@@ -99,9 +109,9 @@ bool RollMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			level.player.view_elevation = std::min( 85.0f / 180.0f * 3.1415926f, level.player.view_elevation);
 
 			return true;
-		}
+		// }
 	}
-	
+
 	return false;
 }
 
@@ -128,8 +138,16 @@ void RollMode::update(float elapsed) {
 				shove = glm::normalize(shove);
 				float ca = std::cos(level.player.view_azimuth);
 				float sa = std::sin(level.player.view_azimuth);
-				shove = glm::vec3(ca, sa, 0.0f) * shove.x + glm::vec3(-sa, ca, 0.0f) * shove.y;
+				// shove = glm::vec3(ca, sa, 0.0f) * shove.x + glm::vec3(-sa, ca, 0.0f) * shove.y;
+        float cos_tilt_angle = glm::dot(-level.player.gravity, glm::vec3(0.0f, 0.0f, 1.0f));
+        float tilt_angle = glm::acos(cos_tilt_angle);
+        if (-level.player.gravity.x > 0.0f) tilt_angle = -tilt_angle;
+        printf("%f ", tilt_angle);
+        shove = glm::vec3((ca * shove.x - sa * shove.y) * cos_tilt_angle,
+                          sa * shove.x + ca * shove.y,
+                          (ca * shove.x - sa * shove.y) * glm::sin(tilt_angle));
 			}
+      if (controls.sprint) { shove *= 2.0f; }
 		}
 
 		shove *= 10.0f;
@@ -148,19 +166,26 @@ void RollMode::update(float elapsed) {
 			//DEBUG: fly mode -- no gravity:
 			velocity = glm::mix(shove, velocity, std::pow(0.5f, elapsed / 0.25f));
 		} else {
-			velocity = glm::vec3(
+			// velocity = glm::vec3(
 				//decay existing velocity toward shove:
-				glm::mix(glm::vec2(shove), glm::vec2(velocity), std::pow(0.5f, elapsed / 0.25f)),
-				//also: gravity
-				velocity.z - 10.0f * elapsed
-			);
+				// glm::mix(glm::vec2(shove), glm::vec2(velocity), std::pow(0.5f, elapsed / 0.25f)),
+				// velocity.z
+			// );
+      velocity = glm::mix(shove, velocity, std::pow(0.5f, elapsed / 0.25f)),
+      //also: gravity
+      velocity += level.player.gravity * elapsed * 30.0f;
+      // jumping
+      if (controls.jump) {
+        if (!level.player.in_air){ velocity += -20.0f*level.player.gravity; level.player.in_air = true; }
+        controls.jump = false;
+      }
 		}
 
 		//set up a new draw_lines object for DEBUG drawing:
 		if (!DEBUG_draw_lines) {
 			DEBUG_draw_lines.reset(new DrawLines(glm::mat4(1.0f)));
 		}
-		
+
 		//collide against level:
 		float remain = elapsed;
 		for (int32_t iter = 0; iter < 10; ++iter) {
@@ -177,6 +202,7 @@ void RollMode::update(float elapsed) {
 			float collision_t = 1.0f;
 			glm::vec3 collision_at = glm::vec3(0.0f);
 			glm::vec3 collision_out = glm::vec3(0.0f);
+      bool is_surface_collision = false;
 			for (auto const &collider : level.mesh_colliders) {
 				glm::mat4x3 collider_to_world = collider.transform->make_local_to_world();
 
@@ -227,10 +253,13 @@ void RollMode::update(float elapsed) {
 					bool did_collide = collide_swept_sphere_vs_triangle(
 						sphere_sweep_from, sphere_sweep_to, sphere_radius,
 						a,b,c,
-						&collision_t, &collision_at, &collision_out);
+						&collision_t, &collision_at, &collision_out, &is_surface_collision);
 
 					if (did_collide) {
 						collided = true;
+            //allow jumping if collision is with triangle with normal in positive z direction
+            glm::vec3 normal = glm::normalize(glm::cross(b-a, c-a));
+            if (normal.z > 0.0f) { level.player.in_air = false; }
 					}
 
 					//draw to indicate result of check:
@@ -258,6 +287,7 @@ void RollMode::update(float elapsed) {
 				break;
 			} else {
 				position = glm::mix(sphere_sweep_from, sphere_sweep_to, collision_t);
+        if (is_surface_collision) level.player.gravity = -collision_out;
 				float d = glm::dot(velocity, collision_out);
 				if (d < 0.0f) {
 					velocity -= (1.1f * d) * collision_out;
@@ -321,12 +351,17 @@ void RollMode::update(float elapsed) {
 	}
 
 	{ //camera update:
-		level.camera->transform->rotation =
-			glm::angleAxis( level.player.view_azimuth, glm::vec3(0.0f, 0.0f, 1.0f) )
+    float gravity_to_z_angle = glm::acos(glm::dot(-level.player.gravity, glm::vec3(0.0f, 0.0f, 1.0f)));
+    if (-level.player.gravity.x < 0.0f) gravity_to_z_angle = -gravity_to_z_angle;
+    // printf("%f | (%f, %f, %f)\n", gravity_to_z_angle, level.player.gravity.x, level.player.gravity.y, level.player.gravity.z);
+    level.camera->transform->rotation =
+      glm::angleAxis(gravity_to_z_angle, glm::vec3(0.0f, 1.0f, 0.0f))
+			* glm::angleAxis( level.player.view_azimuth, glm::vec3(0.0f, 0.0f, 1.0f) )
 			* glm::angleAxis(-level.player.view_elevation + 0.5f * 3.1415926f, glm::vec3(1.0f, 0.0f, 0.0f) )
 		;
 		glm::vec3 in = level.camera->transform->rotation * glm::vec3(0.0f, 0.0f, -1.0f);
-		level.camera->transform->position = level.player.transform->position - 10.0f * in;
+    glm::vec3 top = level.player.transform->position - level.player.gravity * 2.0f;
+		level.camera->transform->position = top;// - 10.0f * in;
 	}
 }
 
@@ -349,12 +384,12 @@ void RollMode::draw(glm::uvec2 const &drawable_size) {
 		DrawSprites draw(*trade_font_atlas, glm::vec2(0,0), glm::vec2(320, 200), drawable_size, DrawSprites::AlignPixelPerfect);
 
 		{
-			std::string help_text = "wasd:move, mouse:camera, bksp: reset";
+			std::string help_text = "wasd:move, spc:jump, shift:sprint, bksp: reset";
 			glm::vec2 min, max;
 			draw.get_text_extents(help_text, glm::vec2(0.0f, 0.0f), 1.0f, &min, &max);
 			float x = std::round(160.0f - (0.5f * (max.x + min.x)));
 			draw.draw_text(help_text, glm::vec2(x, 1.0f), 1.0f, glm::u8vec4(0x00,0x00,0x00,0xff));
-			draw.draw_text(help_text, glm::vec2(x, 2.0f), 1.0f, glm::u8vec4(0xff,0xff,0xff,0xff));
+			draw.draw_text(help_text, glm::vec2(x, 2.0f), 1.0f, glm::u8vec4(0x11,0xdd,0x11,0xff));
 		}
 
 		if (won) {
@@ -363,7 +398,7 @@ void RollMode::draw(glm::uvec2 const &drawable_size) {
 			draw.get_text_extents(text, glm::vec2(0.0f, 0.0f), 2.0f, &min, &max);
 			float x = std::round(160.0f - (0.5f * (max.x + min.x)));
 			draw.draw_text(text, glm::vec2(x, 100.0f), 2.0f, glm::u8vec4(0x00,0x00,0x00,0xff));
-			draw.draw_text(text, glm::vec2(x, 101.0f), 2.0f, glm::u8vec4(0xff,0xff,0xff,0xff));
+			draw.draw_text(text, glm::vec2(x, 101.0f), 2.0f, glm::u8vec4(0x11,0xdd,0x11,0xff));
 		}
 		if (won) {
 			std::string text = "press enter for next";
@@ -371,7 +406,7 @@ void RollMode::draw(glm::uvec2 const &drawable_size) {
 			draw.get_text_extents(text, glm::vec2(0.0f, 0.0f), 1.0f, &min, &max);
 			float x = std::round(160.0f - (0.5f * (max.x + min.x)));
 			draw.draw_text(text, glm::vec2(x, 91.0f), 1.0f, glm::u8vec4(0x00,0x00,0x00,0xff));
-			draw.draw_text(text, glm::vec2(x, 92.0f), 1.0f, glm::u8vec4(0xdd,0xdd,0xdd,0xff));
+			draw.draw_text(text, glm::vec2(x, 92.0f), 1.0f, glm::u8vec4(0x11,0xdd,0x11,0xff));
 		}
 
 	}

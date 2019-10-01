@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
 					on_resize();
 				}
 				//handle input:
-				if (Mode::current && Mode::current->handle_event(evt, window_size)) {
+				if (Mode::current && Mode::current->handle_event(evt, window, window_size)) {
 					// mode handled it; great
 				} else if (evt.type == SDL_QUIT) {
 					Mode::set_current(nullptr);
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 		}
 
 		{ //(3) call the current mode's "draw" function to produce output:
-		
+
 			Mode::current->draw(drawable_size);
 		}
 
