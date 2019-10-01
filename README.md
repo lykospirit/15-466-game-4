@@ -10,7 +10,9 @@ Screen Shot:
 
 How To Play:
 
-WASD to move, Space to jump, Shift to sprint. Your goal is to reach the yellow objective at the end of the tunnel.
+WASD to move, Space to jump, Shift to sprint, Backspace to reset.
+Your goal is to reach the yellow objective at the end of the tunnel.
+ESC to quit.
 
 Sources:
 

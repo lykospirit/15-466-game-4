@@ -142,7 +142,6 @@ void RollMode::update(float elapsed) {
         float cos_tilt_angle = glm::dot(-level.player.gravity, glm::vec3(0.0f, 0.0f, 1.0f));
         float tilt_angle = glm::acos(cos_tilt_angle);
         if (-level.player.gravity.x > 0.0f) tilt_angle = -tilt_angle;
-        printf("%f ", tilt_angle);
         shove = glm::vec3((ca * shove.x - sa * shove.y) * cos_tilt_angle,
                           sa * shove.x + ca * shove.y,
                           (ca * shove.x - sa * shove.y) * glm::sin(tilt_angle));
@@ -166,15 +165,11 @@ void RollMode::update(float elapsed) {
 			//DEBUG: fly mode -- no gravity:
 			velocity = glm::mix(shove, velocity, std::pow(0.5f, elapsed / 0.25f));
 		} else {
-			// velocity = glm::vec3(
-				//decay existing velocity toward shove:
-				// glm::mix(glm::vec2(shove), glm::vec2(velocity), std::pow(0.5f, elapsed / 0.25f)),
-				// velocity.z
-			// );
+			//decay existing velocity toward shove:
       velocity = glm::mix(shove, velocity, std::pow(0.5f, elapsed / 0.25f)),
       //also: gravity
       velocity += level.player.gravity * elapsed * 30.0f;
-      // jumping
+      //jumping
       if (controls.jump) {
         if (!level.player.in_air){ velocity += -20.0f*level.player.gravity; level.player.in_air = true; }
         controls.jump = false;
@@ -353,13 +348,12 @@ void RollMode::update(float elapsed) {
 	{ //camera update:
     float gravity_to_z_angle = glm::acos(glm::dot(-level.player.gravity, glm::vec3(0.0f, 0.0f, 1.0f)));
     if (-level.player.gravity.x < 0.0f) gravity_to_z_angle = -gravity_to_z_angle;
-    // printf("%f | (%f, %f, %f)\n", gravity_to_z_angle, level.player.gravity.x, level.player.gravity.y, level.player.gravity.z);
     level.camera->transform->rotation =
       glm::angleAxis(gravity_to_z_angle, glm::vec3(0.0f, 1.0f, 0.0f))
 			* glm::angleAxis( level.player.view_azimuth, glm::vec3(0.0f, 0.0f, 1.0f) )
 			* glm::angleAxis(-level.player.view_elevation + 0.5f * 3.1415926f, glm::vec3(1.0f, 0.0f, 0.0f) )
 		;
-		glm::vec3 in = level.camera->transform->rotation * glm::vec3(0.0f, 0.0f, -1.0f);
+		// glm::vec3 in = level.camera->transform->rotation * glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 top = level.player.transform->position - level.player.gravity * 2.0f;
 		level.camera->transform->position = top;// - 10.0f * in;
 	}
@@ -384,7 +378,7 @@ void RollMode::draw(glm::uvec2 const &drawable_size) {
 		DrawSprites draw(*trade_font_atlas, glm::vec2(0,0), glm::vec2(320, 200), drawable_size, DrawSprites::AlignPixelPerfect);
 
 		{
-			std::string help_text = "wasd:move, spc:jump, shift:sprint, bksp: reset";
+			std::string help_text = "wasd:move, spc:jump, shift:sprint, bksp:reset, esc:quit";
 			glm::vec2 min, max;
 			draw.get_text_extents(help_text, glm::vec2(0.0f, 0.0f), 1.0f, &min, &max);
 			float x = std::round(160.0f - (0.5f * (max.x + min.x)));
